@@ -6,7 +6,7 @@ import './index.css';
 import axios from 'axios';
 
 // Set base URL for API
-const API_URL = 'http://localhost:5000';
+const API_URL = 'http://localhost:3000/api';
 
 // Create Axios instance with authorization header
 const authAxios = axios.create({
@@ -52,14 +52,14 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    const res = await axios.post(`${API_URL}/login`, { email, password });
+    const res = await axios.post(`${API_URL}/auth/login`, { email, password });
     localStorage.setItem('token', res.data.token);
     setCurrentUser(res.data.user);
     return res.data.user;
   };
 
   const register = async (userData) => {
-    const res = await axios.post(`${API_URL}/register`, userData);
+    const res = await axios.post(`${API_URL}/auth/register`, userData);
     localStorage.setItem('token', res.data.token);
     setCurrentUser(res.data.user);
     return res.data.user;
@@ -264,6 +264,18 @@ const Register = () => {
             required 
             minLength="6"
           />
+        </div>
+        <div className="form-group">
+          <label>Role</label>
+          <select
+            name="role"
+            value={formData.role}
+            onChange={handleChange}
+            required
+          >
+            <option value="student">Student</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         <button type="submit" className="btn btn-primary">Register</button>
       </form>
