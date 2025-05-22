@@ -55,4 +55,15 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Tambahkan method untuk enroll course pada UserSchema
+UserSchema.methods.enrollCourse = async function (courseId) {
+  // Cek jika sudah terdaftar
+  if (!this.enrolledCourses.includes(courseId)) {
+    this.enrolledCourses.push(courseId);
+    await this.save();
+    return true;
+  }
+  return false;
+};
+
 module.exports = mongoose.model('User', UserSchema);

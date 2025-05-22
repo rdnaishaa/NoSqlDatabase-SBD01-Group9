@@ -1,12 +1,12 @@
 import React, { useState, useEffect, createContext, useContext } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Link } from 'react-router-dom';
 import './index.css'; 
 import axios from 'axios';
 
 // Set base URL for API
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'http://localhost:5000/api';
 
 // Create Axios instance with authorization header
 const authAxios = axios.create({
@@ -100,8 +100,17 @@ const AdminRoute = ({ children }) => {
     return <div className="loading">Loading...</div>;
   }
 
-  if (!currentUser || currentUser.role !== 'admin') {
-    return <Navigate to="/" />;
+  // Tambahkan pengecekan lebih aman dan tampilkan pesan jika bukan admin
+  if (!currentUser) {
+    return <Navigate to="/login" />;
+  }
+
+  if (!currentUser.role || currentUser.role.toLowerCase() !== 'admin') {
+    return (
+      <div className="alert alert-danger" style={{ margin: 40 }}>
+        Access denied. You are not authorized to access the admin panel.
+      </div>
+    );
   }
 
   return children;
@@ -310,11 +319,49 @@ const CoursesList = () => {
 
   const enrollCourse = async (courseId) => {
     try {
-      await authAxios.post(`/courses/${courseId}/enroll`);
-      // Refresh courses
-      const res = await authAxios.get('/courses');
-      setCourses(res.data.data);
+      // Coba endpoint user/enroll/:courseId (sesuai userRoutes.js)
+      await authAxios.post(`/users/enroll/${courseId}`);
+      setCourses(prevCourses =>
+        prevCourses.map(course =>
+          course._id === courseId
+            ? {
+                ...course,
+                enrolledStudents: [
+                  ...new Set([
+                    ...(course.enrolledStudents || []),
+                    currentUser?.id || currentUser?._id
+                  ])
+                ]
+              }
+            : course
+        )
+      );
     } catch (err) {
+      // Jika 404, fallback ke endpoint lain (opsional)
+      if (err.response && err.response.status === 404) {
+        try {
+          await authAxios.post(`/courses/${courseId}/enroll`);
+          setCourses(prevCourses =>
+            prevCourses.map(course =>
+              course._id === courseId
+                ? {
+                    ...course,
+                    enrolledStudents: [
+                      ...new Set([
+                        ...(course.enrolledStudents || []),
+                        currentUser?.id || currentUser?._id
+                      ])
+                    ]
+                  }
+                : course
+            )
+          );
+          return;
+        } catch (err2) {
+          setError(err2.response?.data?.error || 'Failed to enroll');
+          return;
+        }
+      }
       setError(err.response?.data?.error || 'Failed to enroll');
     }
   };
@@ -326,28 +373,33 @@ const CoursesList = () => {
     <div className="courses-container">
       <h2>Available Courses</h2>
       <div className="courses-grid">
-        {courses.map(course => (
-          <div key={course._id} className="course-card">
-            <h3>{course.title}</h3>
-            <p>{course.description}</p>
-            <div className="course-details">
-              <span>Instructor: {course.instructor}</span>
-              <span>Duration: {course.duration} hours</span>
+        {courses.map(course => {
+          const userId = currentUser?.id || currentUser?._id;
+          const enrolledStudents = Array.isArray(course.enrolledStudents) ? course.enrolledStudents : [];
+          const isEnrolled = enrolledStudents.includes(userId);
+          return (
+            <div key={course._id} className="course-card">
+              <h3>{course.title}</h3>
+              <p>{course.description}</p>
+              <div className="course-details">
+                <span>Instructor: {course.instructor}</span>
+                <span>Duration: {course.duration} hours</span>
+              </div>
+              <div className="course-actions">
+                <Link to={`/courses/${course._id}`} className="btn btn-primary">View Details</Link>
+                {currentUser && currentUser.role === 'student' && (
+                  <button 
+                    onClick={() => enrollCourse(course._id)} 
+                    className="btn btn-secondary"
+                    disabled={isEnrolled}
+                  >
+                    {isEnrolled ? 'Enrolled' : 'Enroll'}
+                  </button>
+                )}
+              </div>
             </div>
-            <div className="course-actions">
-              <Link to={`/courses/${course._id}`} className="btn btn-primary">View Details</Link>
-              {currentUser && currentUser.role === 'student' && (
-                <button 
-                  onClick={() => enrollCourse(course._id)} 
-                  className="btn btn-secondary"
-                  disabled={course.enrolledStudents.includes(currentUser.id)}
-                >
-                  {course.enrolledStudents.includes(currentUser.id) ? 'Enrolled' : 'Enroll'}
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -358,7 +410,7 @@ const CourseDetail = () => {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { id } = React.useParams();
+  const { id } = useParams(); // <-- perbaikan di sini
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -408,24 +460,33 @@ const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [usersError, setUsersError] = useState('');
   const [activeTab, setActiveTab] = useState('courses');
+  const [success, setSuccess] = useState('');
+
+  // Untuk refresh courses dari luar (misal setelah tambah/edit)
+  const fetchCourses = async () => {
+    try {
+      const coursesRes = await authAxios.get('/courses');
+      setCourses(coursesRes.data.data);
+    } catch (err) {
+      setError('Failed to load admin data');
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
+      await fetchCourses();
       try {
-        const [coursesRes, usersRes] = await Promise.all([
-          authAxios.get('/courses'),
-          authAxios.get('/users')
-        ]);
-        setCourses(coursesRes.data.data);
+        const usersRes = await authAxios.get('/users');
         setUsers(usersRes.data.data);
+        setUsersError('');
       } catch (err) {
-        setError('Failed to load admin data');
+        setUsersError('Failed to load users data');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -434,10 +495,18 @@ const AdminPanel = () => {
       try {
         await authAxios.delete(`/courses/${courseId}`);
         setCourses(courses.filter(course => course._id !== courseId));
+        setSuccess('Course deleted successfully');
+        setTimeout(() => setSuccess(''), 2000);
       } catch (err) {
         setError('Failed to delete course');
       }
     }
+  };
+
+  // Handler untuk update courses setelah tambah/edit
+  const handleCoursesUpdated = async () => {
+    await fetchCourses();
+    setActiveTab('courses');
   };
 
   if (loading) return <div className="loading">Loading admin panel...</div>;
@@ -446,7 +515,7 @@ const AdminPanel = () => {
   return (
     <div className="admin-panel">
       <h2>Admin Panel</h2>
-      
+      {success && <div className="alert alert-success">{success}</div>}
       <div className="admin-tabs">
         <button 
           className={`tab-btn ${activeTab === 'courses' ? 'active' : ''}`}
@@ -508,39 +577,44 @@ const AdminPanel = () => {
         {activeTab === 'users' && (
           <div className="users-list">
             <h3>Manage Users</h3>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Enrolled Courses</th>
-                  <th>Joined Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <tr key={user._id}>
-                    <td>{user.name}</td>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
-                    <td>{user.enrolledCourses.length}</td>
-                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+            {usersError && <div className="alert alert-danger">{usersError}</div>}
+            {!usersError && (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Enrolled Courses</th>
+                    <th>Joined Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user._id}>
+                      <td>{user.name}</td>
+                      <td>{user.email}</td>
+                      <td>{user.role}</td>
+                      <td>{user.enrolledCourses.length}</td>
+                      <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         )}
         
-        {activeTab === 'add-course' && <CourseForm />}
+        {activeTab === 'add-course' && (
+          <CourseForm onSuccess={handleCoursesUpdated} />
+        )}
       </div>
     </div>
   );
 };
 
 // Course Form Component (used for both Add and Edit)
-const CourseForm = ({ courseId }) => {
+const CourseForm = ({ courseId, onSuccess }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -551,7 +625,7 @@ const CourseForm = ({ courseId }) => {
   const [loading, setLoading] = useState(courseId ? true : false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const navigate = React.useNavigate();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -566,7 +640,6 @@ const CourseForm = ({ courseId }) => {
         }
       }
     };
-
     fetchCourse();
   }, [courseId]);
 
@@ -581,17 +654,20 @@ const CourseForm = ({ courseId }) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    
     try {
-      // Convert duration to number
       const data = {
         ...formData,
         duration: Number(formData.duration)
       };
-      
       if (courseId) {
         await authAxios.put(`/courses/${courseId}`, data);
         setSuccess('Course updated successfully');
+        if (onSuccess) {
+          await onSuccess();
+        }
+        setTimeout(() => {
+          navigate('/admin');
+        }, 1000);
       } else {
         await authAxios.post('/courses', data);
         setSuccess('Course created successfully');
@@ -602,6 +678,9 @@ const CourseForm = ({ courseId }) => {
           instructor: '',
           duration: ''
         });
+        if (onSuccess) {
+          await onSuccess();
+        }
       }
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to save course');
@@ -687,8 +766,13 @@ const CourseForm = ({ courseId }) => {
 
 // Edit Course Page
 const EditCourse = () => {
-  const { id } = React.useParams();
-  return <CourseForm courseId={id} />;
+  const { id } = useParams();
+  const navigate = useNavigate();
+  // Gunakan handler untuk update courses setelah edit
+  const handleSuccess = async () => {
+    // Tidak perlu fetch di sini, karena akan redirect ke /admin yang sudah fetch
+  };
+  return <CourseForm courseId={id} onSuccess={handleSuccess} />;
 };
 
 // Main App Component
