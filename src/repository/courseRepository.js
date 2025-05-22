@@ -39,16 +39,28 @@ const courseRepository = {
             throw new Error('Course or User not found');
         }
 
-        if (user.enrolledCourses.includes(course._id)) {
+        // Validate user is a student
+        if (user.role !== 'student') {
+            throw new Error('Only students can enroll in courses');
+        }
+
+        // Check if already enrolled using toString() for proper comparison
+        if (user.enrolledCourses.some(id => id.toString() === courseId.toString())) {
             throw new Error('Student already enrolled in this course');
         }
 
-        user.enrolledCourses.push(course._id);
-        course.enrolledStudents.push(user._id);
+        // Add references to both documents
+        user.enrolledCourses.push(courseId);
+        course.enrolledStudents.push(userId);
 
+        // Save both documents
         await Promise.all([user.save(), course.save()]);
 
-        return { course, user };
+        // Return populated course and user
+        return {
+            course: await Course.findById(courseId).populate('enrolledStudents'),
+            user: await User.findById(userId).populate('enrolledCourses')
+        };
     }
 };
 

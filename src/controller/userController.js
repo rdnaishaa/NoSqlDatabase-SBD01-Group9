@@ -1,5 +1,6 @@
 const User = require('../database/models/User');
 const userRepository = require('../repository/userRepository');
+const courseRepository = require('../repository/courseRepository');
 
 // Get all users (admin only)
 exports.getUsers = async (req, res) => {
@@ -25,4 +26,24 @@ exports.getUsers = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+// Enroll in course
+exports.enrollInCourse = async (req, res) => {
+    try {
+        const { course, user } = await courseRepository.enrollStudent(
+            req.params.courseId,
+            req.user.id
+        );
+
+        res.status(200).json({
+            success: true,
+            data: { course, user }
+        });
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            error: error.message
+        });
+    }
 };
