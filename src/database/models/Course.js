@@ -11,9 +11,15 @@ const CourseSchema = new mongoose.Schema({
     type: String,
     required: [true, "Please add a description"],
   },
-  content: {
-    type: String,
-    required: [true, "Please add course content"],
+  pages: {
+    type: [String],
+    required: false,
+    default: []
+  },
+  totalPages: {
+    type: Number,
+    required: false,
+    default: 1
   },
   instructor: {
     type: String,

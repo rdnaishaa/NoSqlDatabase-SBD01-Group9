@@ -2,6 +2,8 @@ const Course = require('../database/models/Course');
 const User = require('../database/models/User');
 const courseRepository = require('../repository/courseRepository');
 
+// --- COURSES --- //
+
 // Get all courses
 exports.getCourses = async (req, res) => {
   try {
@@ -171,5 +173,103 @@ exports.enrollCourse = async (req, res) => {
       success: false,
       error: error.message,
     });
+  }
+};
+
+// Unenroll from a course (student only)
+exports.unenrollCourse = async (req, res) => {
+  try {
+    const course = await Course.findById(req.params.id);
+    const user = await User.findById(req.user.id);
+
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        error: 'Course not found',
+      });
+    }
+
+    // Check if student is enrolled
+    if (!user.enrolledCourses.includes(course._id)) {
+      return res.status(400).json({
+        success: false,
+        error: 'You are not enrolled in this course',
+      });
+    }
+
+    // Remove course from user's enrolledCourses
+    user.enrolledCourses = user.enrolledCourses.filter(cid => cid.toString() !== course._id.toString());
+    await user.save();
+
+    // Remove user from course's enrolledStudents
+    course.enrolledStudents = course.enrolledStudents.filter(uid => uid.toString() !== user._id.toString());
+    await course.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Successfully unenrolled from course',
+    });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// --- PROGRESS & USER ACTIVITIES ---
+
+// Get user progress for a course
+exports.getUserCourseProgress = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const courseId = req.params.courseId;
+    const progress = await courseRepository.getUserCourseProgress(userId, courseId);
+    // Pastikan hanya progress halaman yang menentukan completed
+    const isCompleted = progress && progress.currentPage >= progress.totalPages && progress.totalPages > 0;
+    res.status(200).json({ success: true, data: { ...progress, isCompleted } });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// Add 1 hour to user progress for a course
+exports.addHourToUserCourse = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const courseId = req.params.courseId;
+    const progress = await courseRepository.addHourToUserCourse(userId, courseId);
+    res.status(200).json({ success: true, data: progress });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// Admin: Get all user activities (progress on all courses)
+exports.getAllUserActivities = async (req, res) => {
+  try {
+    if (!req.user.role || req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, error: 'Only admin can access this' });
+    }
+    const activities = await courseRepository.getAllUserActivities();
+    // Tambahkan progress percent dan completed di sini
+    const mapped = activities.map(act => ({
+      ...act,
+      progressPercent: act.totalPages && act.totalPages > 0 ? Math.round((act.currentPage / act.totalPages) * 100) : 0,
+      isCompleted: act.currentPage >= act.totalPages && act.totalPages > 0
+    }));
+    res.status(200).json({ success: true, data: mapped });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
+  }
+};
+
+// Update user course page progress
+exports.updateUserCoursePage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const courseId = req.params.courseId;
+    const { page, totalPages } = req.body;
+    const progress = await courseRepository.updateUserCoursePage(userId, courseId, page, totalPages);
+    res.status(200).json({ success: true, data: progress });
+  } catch (error) {
+    res.status(400).json({ success: false, error: error.message });
   }
 };
