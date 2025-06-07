@@ -745,7 +745,7 @@ const CoursesList = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
       <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
         <div className="flex items-center space-x-4">
           <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -756,7 +756,7 @@ const CoursesList = () => {
   );
 
   if (error) return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white flex items-center justify-center">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
       <div className="bg-red-50 border border-red-200 rounded-2xl p-8 shadow-xl max-w-md">
         <div className="flex items-center space-x-3">
           <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
@@ -769,7 +769,7 @@ const CoursesList = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="container mx-auto px-6 py-8">
         {/* Header Section */}
         <div className="mb-12">
@@ -1697,11 +1697,11 @@ const AdminPanel = () => {
                         <th className="text-left py-4 px-6 font-semibold text-slate-700">Progress (%)</th>
                         <th className="text-left py-4 px-6 font-semibold text-slate-700">Completed</th>
                         <th className="text-left py-4 px-6 font-semibold text-slate-700">Last Access</th>
+                        <th className="text-left py-4 px-6 font-semibold text-slate-700">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {activities.map(act => {
-                        // Gunakan progressPercent dari backend jika ada, jika tidak hitung manual
                         const percent = typeof act.progressPercent === 'number'
                           ? act.progressPercent
                           : (act.totalPages && act.totalPages > 0 ? Math.round((act.currentPage / act.totalPages) * 100) : 0);
@@ -1736,6 +1736,18 @@ const AdminPanel = () => {
                             </td>
                             <td className="py-4 px-6 text-slate-600">
                               {act.lastAccess ? new Date(act.lastAccess).toLocaleString() : '-'}
+                            </td>
+                            <td className="py-4 px-6">
+                              <button
+                                className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors duration-200 shadow-sm hover:shadow-md"
+                                onClick={() => {
+                                  if (window.confirm(`Remove this activity for user ${act.userName}?`)) {
+                                    setActivities(activities => activities.filter(a => a._id !== act._id));
+                                  }
+                                }}
+                              >
+                                Remove Activity
+                              </button>
                             </td>
                           </tr>
                         );
