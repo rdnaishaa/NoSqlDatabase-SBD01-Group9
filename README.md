@@ -85,7 +85,7 @@ NOSQLDATABASE-SBD01_GROUP9/
 │   ├── controller/           # Handles incoming request logic
 │   │   ├── authController.js
 │   │   ├── courseController.js
-│   └── userController.js
+│   │   └── userController.js
 │   ├── database/             # Manages database connection and models
 │   │   ├── models/
 │   │   │   ├── Course.js
