@@ -299,7 +299,7 @@ The backend exposes a RESTful API with role-based access control.
 
 ## ⚙️ Environment Configuration
 
-Create a `.env` file in the `backend/` directory with these essential variables:
+Create a `.env` file in the `src/` directory with these essential variables:
 
 ```bash
 # Server Configuration
