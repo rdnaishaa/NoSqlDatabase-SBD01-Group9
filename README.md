@@ -177,10 +177,23 @@ Access the application at `http://localhost:5173` (frontend) with API services r
 
 ## 📱 User Interface Showcase
 
+### **Landing Page**
+* A view of the landing page before login
+![picture 260](https://i.imgur.com/eZHAaof.png)  
+
+### **Login and Register**
+* A view of the Login and Register page
+
+| Login | Register |
+|:-----:|:-------:|
+| ![picture 261](https://i.imgur.com/ZKRKgMQ.png) | ![picture 262](https://i.imgur.com/bkT7hR2.png) |
+
+
 ### **Student Dashboard View**
 
   * A view of the main dashboard where students can see their enrolled courses and a summary of their progress.
-  ![picture 252](https://i.imgur.com/Y3nuazI.png)  
+  ![picture 264](https://i.imgur.com/ydje58A.png)  
+
 
 
 ### **Course Catalog View**
@@ -191,8 +204,12 @@ Access the application at `http://localhost:5173` (frontend) with API services r
     ![picture 258](https://i.imgur.com/pZ0XtQg.png)  
 
     - **Students Preview**
-    ![picture 253](https://i.imgur.com/ObzGvLs.png)  
+    ![picture 265](https://i.imgur.com/ns0Zlew.png)  
 
+
+### **Course Completion**
+  * This page shows the course details of the general description, instructor, duration, and created at. Also can track students progress.
+  ![picture 266](https://i.imgur.com/X77pNfh.png)  
 
 
 ### **Admin Dashboard View**
@@ -210,7 +227,8 @@ Access the application at `http://localhost:5173` (frontend) with API services r
       ![picture 256](https://i.imgur.com/9Tz464G.png)  
 
     - **User Activities**
-    ![picture 257](https://i.imgur.com/rqEuzXe.png)  
+    ![picture 259](https://i.imgur.com/VsEj7en.png)  
+
 
 ---
 
@@ -368,10 +386,6 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 CMD ["node", "server.js"]
 ```
 
-**Multi-container deployment:**
-```bash
-docker-compose up -d
-```
 
 ---
 
@@ -382,7 +396,7 @@ docker-compose up -d
 - **Frontend:** React.js, Vite, Tailwind CSS
 - **Backend:** Node.js, Express.js, MongoDB
 - **Authentication:** JSON Web Tokens (JWT)
-- **Deployment:** Docker, Docker Compose
+- **Deployment:** Docker, Vercel
 
 ---
 
