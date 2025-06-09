@@ -6,7 +6,7 @@ import './index.css';
 import axios from 'axios';
 
 // Set base URL for API
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://sbd-finpro-kuliah.vercel.app/api';
 
 // Create Axios instance with authorization header
 const authAxios = axios.create({
