@@ -1,19 +1,36 @@
-version: '3.8'
+# version: '3.8'
+
+# services:
+#   app:
+#     build:
+#       context: .
+#       dockerfile: Dockerfile
+#     ports:
+#       - "5000:5000"
+#     environment:
+#       - NODE_ENV=production
+#     volumes:
+#       - .:/app
+#     networks:
+#       - app-network
+
+# networks:
+#   app-network:
+#     driver: bridge
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  backend:
+    build: .
+    ports:
+      - "5000:5000"
+    env_file:
+      - src/.env
+    depends_on:
+      - frontend
+      
+  frontend:
+    build: ./my-project
     ports:
       - "5000:5000"
     environment:
-      - NODE_ENV=production
-    volumes:
-      - .:/app
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
+      - API_URL=https://sbd-finpro-kuliah.vercel.app/api

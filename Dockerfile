@@ -1,23 +1,11 @@
-# Gunakan image Node.js resmi
-FROM node:18
-
-# Set direktori kerja di dalam container
+FROM node:22
 WORKDIR /app
-
-# Salin file package.json dan package-lock.json
 COPY package*.json ./
-
-# Install dependencies produksi
 RUN npm install --production
-
-# Salin seluruh source code ke dalam container
+COPY src/.env .env
 COPY . .
 
-# Set environment variable untuk production
 ENV NODE_ENV=production
-
-# Buka port aplikasi (pastikan sesuai dengan PORT di index.js/.env)
 EXPOSE 5000
-
-# Jalankan aplikasi
-CMD ["node", "index.js"]
+# CMD ["node", "index.js"]
+CMD ["npm", "start"]
