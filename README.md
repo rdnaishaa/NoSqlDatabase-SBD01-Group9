@@ -352,41 +352,34 @@ EMAIL_PASS=your-app-password
 Deploy the backend using our optimized Docker configuration:
 
 ```dockerfile
-# Use official Node.js LTS image
-FROM node:18-alpine
-
-# Set working directory
-WORKDIR /usr/src/app
-
-# Copy package files
+FROM node:22
+WORKDIR /app
 COPY package*.json ./
-
-# Install production dependencies only
-RUN npm ci --only=production && npm cache clean --force
-
-# Copy application source
+RUN npm install --production
+COPY src/.env .env
 COPY . .
 
-# Create non-root user for security
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S ecourse -u 1001
-USER ecourse
-
-# Set production environment
 ENV NODE_ENV=production
-
-# Expose application port
 EXPOSE 5000
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node healthcheck.js
-
-# Start application
-CMD ["node", "server.js"]
+# CMD ["node", "index.js"]
+CMD ["npm", "start"]
 ```
 
+## Setup Instructions
 
+Ensure to prepare your .env file in the root directory of the project, use this for the following content:
+
+```env
+MONGODB_URI={your_mongodb_uri}
+PORT=5000
+```
+
+Follow these steps to set up the project, this project is built using Docker so that you need to have Docker installed on your machine. :
+
+```bash
+git clone https://github.com/rdnaishaa/NoSqlDatabase-SBD01-Group9.git
+docker-compose up -d --build
+```
 ---
 
 
