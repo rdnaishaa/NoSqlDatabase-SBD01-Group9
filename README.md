@@ -186,7 +186,7 @@ Access the application at `http://localhost:5173` (frontend) with API services r
 
 | Login | Register |
 |:-----:|:-------:|
-| ![picture 261](https://i.imgur.com/ZKRKgMQ.png) | ![picture 262](https://i.imgur.com/bkT7hR2.png) |
+| ![picture 268](https://i.imgur.com/mudG7ye.png) | ![picture 267](https://i.imgur.com/ML1GfnV.png) |
 
 
 ### **Student Dashboard View**
@@ -365,7 +365,7 @@ EXPOSE 5000
 CMD ["npm", "start"]
 ```
 
-## Setup Instructions
+## ⚙️ Setup Instructions
 
 Ensure to prepare your .env file in the root directory of the project, use this for the following content:
 
